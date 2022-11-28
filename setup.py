@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='base114514',
-    version='0.1',
+    version='0.2',
     script="base114514.py",
     author="Yidaozhan Ya",
     author_email="ydz@yidaozhan.top",
@@ -17,7 +17,6 @@ setuptools.setup(
     url="https://github.com/YidaozhanYa/base114514",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: Shimokitazawa License",
         "Operating System :: OS Independent",
     ],
     entry_points={'console_scripts': ['base114514 = base114514:main']},
