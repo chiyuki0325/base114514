@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='base114514',
-    version='0.3',
+    version='0.4',
     script="base114514.py",
     author="Yidaozhan Ya",
     author_email="ydz@yidaozhan.top",
