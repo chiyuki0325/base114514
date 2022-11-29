@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='base114514',
-    version='0.2',
+    version='0.3',
     script="base114514.py",
     author="Yidaozhan Ya",
     author_email="ydz@yidaozhan.top",
@@ -21,7 +21,7 @@ setuptools.setup(
     ],
     entry_points={'console_scripts': ['base114514 = base114514:main']},
     keywords=['base114514', 'base64'],
-    python_requires='>=3.5',
+    python_requires='>=3.10',
     zip_safe=False,
     include_package_data=True,
 )

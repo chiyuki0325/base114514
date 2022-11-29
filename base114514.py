@@ -3,6 +3,7 @@
 """Base114514 data encodings"""
 
 from base64 import b64decode, b64encode
+from locale import getdefaultlocale
 from binascii import Error as BinASCIIError
 from re import fullmatch
 import sys
@@ -30,6 +31,36 @@ decoding_dict = {b'1145': b'A', b'1154': b'B', b'1514': b'C', b'1415': b'D', b'1
                  b'1111': b'2', b'4444': b'3', b'5555': b'4', b'1155': b'5', b'1144': b'6', b'5511': b'7',
                  b'5544': b'8', b'4455': b'9', b'4411': b'+', b'5115': b'/', b'4114': b'='}
 
+
+def _(s: str) -> str:
+    cn_strings = {
+        'string argument should contain only ASCII characters': '字符串参数应仅包含 ASCII 字符',
+        'Non-base114514 digit found': '发现非 base114514 字符',
+        'Usage: base114514 [OPTION]... [FILE]': '用法：base114514 [选项]... [文件]',
+        'Base114514 encode or decode FILE, or standard input, to standard output.\n': 'Base114514 编码或解码 <文件> 或标准输入，并输出到标准输出。\n',
+        'With no FILE, or when FILE is -, read standard input.\n': '如果没有指定 <文件>，或者 <文件> 为 "-"，则从标准输入读取。\n',
+        'Mandatory arguments to long options are mandatory for short options too.': '长选项的必选参数对于短选项也是必选的。',
+        'decode data': '解码数据',
+        'when decoding, ignore non-numeric characters': '解码时忽略非数字字符',
+        'COLS': '列数',
+        'wrap encoded lines after COLS character (default 76).': '在指定的 <列数> 后自动换行（默认为 76）。',
+        'Use 0 to disable line wrapping': '0 为禁用自动换行',
+        'output version information and exit': '显示版本信息并退出',
+        'The data are encoded as described for the base114514 alphabet by YidaozhanYa.': '数据以 YidaozhanYa 规定的 base114514 数字表的格式进行编码。',
+        'When decoding, the input may contain newlines in addition to the bytes of': '解码时，输入数据除了包含正式的 base114514 数字表的字节以外，还可能包含一些',
+        'the formal base114514 alphabet.  Use --ignore-garbage to attempt to recover': '换行符。使用 --ignore-garbage 来使程序在已编码的流中遇到数字表以外的',
+        'from any other non-numeric bytes in the encoded stream.': '字节后尝试恢复执行。',
+        'Huh, huh, huh, ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah': '哼, 哼, 哼, 啊啊啊啊啊啊啊啊啊啊啊啊啊',
+        'unrecognized option': '不适用的选项',
+        'Try \'base114514 --help\' for more information.': '请尝试执行 "base114514 --help" 来获取更多信息。',
+        'extra operand': '多余的操作对象'
+    }
+    if getdefaultlocale()[0].startswith('zh'):
+        return cn_strings[s]
+    else:
+        return s
+
+
 # from standard base64 module
 bytes_types = (bytes, bytearray)  # Types acceptable as binary data
 
@@ -39,7 +70,7 @@ def _bytes_from_decode_data(s):
         try:
             return s.encode('ascii')
         except UnicodeEncodeError:
-            raise ValueError('string argument should contain only ASCII characters')
+            raise ValueError(_('string argument should contain only ASCII characters'))
     if isinstance(s, bytes_types):
         return s
     try:
@@ -50,7 +81,6 @@ def _bytes_from_decode_data(s):
 
 
 # Base114514 encoding/decoding uses standard base64 module
-
 
 def b114514encode(bytes_to_encode: bytes) -> bytes:
     """
@@ -76,10 +106,19 @@ def b114514decode(bytes_to_decode: bytes, validate: bool = False) -> bytes:
     """
     bytes_to_decode = _bytes_from_decode_data(bytes_to_decode)
     decoded: bytes = bytes()
-    if validate and not fullmatch(b'[0-9]', bytes_to_decode):
-        raise BinASCIIError('Non-base64 digit found')
-    for i in range(len(bytes_to_decode) // 4):
-        decoded += decoding_dict[bytes_to_decode[i * 4:i * 4 + 4]]
+    if validate and not fullmatch(r'[145]*', bytes_to_decode.decode()):
+        raise BinASCIIError(_('Non-base114514 digit found'))
+    validated_bytes_to_decode = bytes()
+    for i in range(len(bytes_to_decode)):
+        match bytes_to_decode[i]:
+            case 49:
+                validated_bytes_to_decode += b'1'
+            case 52:
+                validated_bytes_to_decode += b'4'
+            case 53:
+                validated_bytes_to_decode += b'5'
+    for i in range(len(validated_bytes_to_decode) // 4):
+        decoded += decoding_dict[validated_bytes_to_decode[i * 4:i * 4 + 4]]
     return b64decode(decoded)
 
 
@@ -103,19 +142,19 @@ def main():
     for arg in sys.argv:
 
         if arg == '--help':
-            print('用法：base114514 [选项]... [文件]')
-            print('Base114514 编码或解码 <文件> 或标准输入，并输出到标准输出。\n')
-            print('如果没有指定 <文件>，或者 <文件> 为 "-"，则从标准输入读取。\n')
-            print('长选项的必选参数对于短选项也是必选的。')
-            print('  -d, --decode          解码数据')
-            print('  -i, --ignore-garbage  解码时忽略非字母字符')
-            print('  -w, --wrap=列数       在指定的 <列数> 后自动换行（默认为 76）。')
-            print('                          0 为禁用自动换行')
-            print('      --version     显示版本信息并退出\n')
-            print('数据以 YidaozhanYa 规定的 base114514 数字表的格式进行编码。')
-            print('解码时，输入数据除了包含正式的 base114514 数字表的字节以外，还可能包含一些')
-            print('换行符。使用 --ignore-garbage 来使程序在已编码的流中遇到字母表以外的')
-            print('字节后尝试恢复执行。')
+            print(_('Usage: base114514 [OPTION]... [FILE]'))
+            print(_('Base114514 encode or decode FILE, or standard input, to standard output.\n'))
+            print(_('With no FILE, or when FILE is -, read standard input.\n'))
+            print(_('Mandatory arguments to long options are mandatory for short options too.'))
+            print(f'  -d, --decode          {_("decode data")}')
+            print(f'  -i, --ignore-garbage  {_("when decoding, ignore non-numeric characters")}')
+            print(f'  -w, --wrap={_("COLS")}       {_("wrap encoded lines after COLS character (default 76).")}')
+            print(f'                          {_("Use 0 to disable line wrapping")}')
+            print(f'      --version     {_("output version information and exit")}\n')
+            print(_('The data are encoded as described for the base114514 alphabet by YidaozhanYa.'))
+            print(_('When decoding, the input may contain newlines in addition to the bytes of'))
+            print(_('the formal base114514 alphabet.  Use --ignore-garbage to attempt to recover'))
+            print(_('from any other non-numeric bytes in the encoded stream.'))
             exit()
 
         elif arg == '--version':
@@ -131,7 +170,7 @@ def main():
                   '     ◥██◣     ◢▄◤'
                   '        ▀██▅▇▀'
                   ''
-                  '哼, 哼, 哼, 啊啊啊啊啊啊啊啊啊啊啊啊啊!')
+                  f'{_("Huh, huh, huh, ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah ah")}!')
             exit()
 
         elif arg.startswith('-w') or arg.startswith('--wrap'):
@@ -144,16 +183,16 @@ def main():
             ignore_garbage_mode = True
 
         elif arg.startswith('-'):
-            print('base114514: 不适用的选项 -- ' + arg)
-            print('请尝试执行 "base114514 --help" 来获取更多信息。')
+            print(f'base114514: {_("unrecognized option")} \'{arg}\'')
+            print(_('Try \'base114514 --help\' for more information.'))
             exit()
 
         else:
             if file_name == "":
                 file_name = arg
             else:
-                print('base114514: 多余的操作对象 "' + arg + '"')
-                print('请尝试执行 "base114514 --help" 来获取更多信息。')
+                print(f'base114514: {_("extra operand")} \'{arg}\'')
+                print(_('Try \'base114514 --help\' for more information.'))
                 exit()
 
     if not decode_mode:
@@ -173,11 +212,13 @@ def main():
         # decode
         if file_name == "":
             # stdin
-            decoded_string = b114514decode(sys.stdin.buffer.read().strip(b' \n\r'), not ignore_garbage_mode).decode()
+            decoded_string = b114514decode(sys.stdin.buffer.read().strip(b' \n\r'),
+                                           not ignore_garbage_mode).decode()
         else:
             # file
             opened_file = open(file_name)
-            decoded_string = b114514decode(opened_file.buffer.read().strip(b' \n\r'), not ignore_garbage_mode).decode()
+            decoded_string = b114514decode(opened_file.buffer.read().strip(b' \n\r'),
+                                           not ignore_garbage_mode).decode()
         print(decoded_string, end='')
 
 
